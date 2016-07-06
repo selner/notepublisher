@@ -6,6 +6,19 @@ from evernote.api.client import EvernoteClient
 # "https://sandbox.evernote.com/shard/s1/notestore"
 
 
+import json
+import codecs
+
+def getClientInstance(fileAuthKeys):
+    f = codecs.open(fileAuthKeys, mode='r')
+    clientKeys = json.load(fp=f)
+
+    if "consumer_key" in clientKeys and "consumer_secret" in clientKeys:
+        return getOauthClientInstance(key=clientKeys["consumer_key"], secret=clientKeys["consumer_secret"])
+    elif "dev_auth_token" in clientKeys:
+        return getDevClientInstance(auth_token=clientKeys["dev_auth_token"])
+
+
 def getDevClientInstance(auth_token= "your developer token"):
     # Real applications authenticate with Evernote using OAuth, but for the
     # purpose of exploring the API, you can get a developer token that allows
@@ -40,10 +53,10 @@ def getDevClientInstance(auth_token= "your developer token"):
 
 
 
-def getOauthClientInstance():
+def getOauthClientInstance(key, secret):
     client = EvernoteClient(
-        consumer_key='bryanselner',
-        consumer_secret='d68a4182a836d225',
+        consumer_key=key,
+        consumer_secret=secret,
         sandbox=True # Default: True
     )
     request_token = client.get_request_token('YOUR CALLBACK URL')

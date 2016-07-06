@@ -1,4 +1,3 @@
-auth_token = "S=s1:U=92afd:E=15d0a871533:C=155b2d5e838:P=1cd:A=en-devtoken:V=2:H=597eae9b2b2e278a8fb160460e20c8d5"  # "your developer token"
 from client import *
 
 import evernote.edam.notestore.NoteStore as NoteStore
@@ -154,7 +153,7 @@ def filter_noteboooks_by_stack(notebooks, matchString):
 
 
 
-client = getDevClientInstance(auth_token)
+client = getClientInstance("oauthkeys.json")
 note_store = client.get_note_store()
 notebooks = get_notebooks(client)
 stackbooks = filter_noteboooks_by_stack(notebooks, "Test")

@@ -1,9 +1,5 @@
-
-from requests import *
 import evernote.edam.userstore.constants as UserStoreConstants
-
 from evernote.api.client import EvernoteClient
-# "https://sandbox.evernote.com/shard/s1/notestore"
 
 
 import json
@@ -17,6 +13,18 @@ def getClientInstance(fileAuthKeys):
         return getOauthClientInstance(key=clientKeys["consumer_key"], secret=clientKeys["consumer_secret"])
     elif "dev_auth_token" in clientKeys:
         return getDevClientInstance(auth_token=clientKeys["dev_auth_token"])
+
+def parse_query_string(authorize_url):
+    """ Simple function for extracting the OAuth parameters from an URL
+    """
+    uargs = authorize_url.split('?')
+    vals = {}
+    if len(uargs) == 1:
+        raise Exception('Invalid Authorization URL')
+    for pair in uargs[1].split('&'):
+        key, value = pair.split('=', 1)
+        vals[key] = value
+    return vals
 
 
 def getDevClientInstance(auth_token= "your developer token"):
@@ -53,22 +61,34 @@ def getDevClientInstance(auth_token= "your developer token"):
 
 
 
-def getOauthClientInstance(key, secret):
+def getOauthClientInstance(key, secret, sandbox=True):
     client = EvernoteClient(
         consumer_key=key,
         consumer_secret=secret,
-        sandbox=True # Default: True
+        sandbox=sandbox # Default: True
     )
-    request_token = client.get_request_token('YOUR CALLBACK URL')
-    client.get_authorize_url(request_token)
+    if sandbox:
+        baseURI = "https://sandbox.evernote.com"
+    else:
+        baseURI = "https://www.evernote.com"
+    request_token = client.get_request_token('http://localhost')
+
+    # request_token = client.get_request_token(baseURI + '/oauth')
+    authorization_url = client.get_authorize_url(request_token)
     #  => https://sandbox.evernote.com/OAuth.action?oauth_token=OAUTH_TOKEN
     # To obtain the access token
     #
+    import webbrowser
+    webbrowser.open_new(authorization_url)
+
+    print("Your browser is opening the OAuth authorization for this client session.")
+    response = raw_input("Paste the URL after login here: ")
+    vals = parse_query_string(response)
+
     access_token = client.get_access_token(
         request_token['oauth_token'],
         request_token['oauth_token_secret'],
-        request.GET.get('oauth_verifier', '')
-    )
+        vals['oauth_verifier'])
 
     client = EvernoteClient(token=access_token)
 

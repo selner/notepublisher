@@ -25,3 +25,7 @@ PROD-oauthkeys.json
 oauthkeys.json
 
 oauthkeys.json
+
+*.cfg
+
+notepublisher.cfg

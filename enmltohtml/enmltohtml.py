@@ -100,7 +100,12 @@ class FileMediaStore(MediaStore):
         if not os.path.exists(self.path):
             os.makedirs(self.path)
         data = self._get_resource_by_hash(hash_str)
-        file_path = self.path + '/'  + hash_str + MIME_TO_EXTESION_MAPPING[mime_type]
+        if mime_type in MIME_TO_EXTESION_MAPPING:
+            fileext = MIME_TO_EXTESION_MAPPING[mime_type]
+        else:
+            fileext = "." + mime_type.split("/")[1]
+
+        file_path = self.path + '/'  + hash_str + fileext
         f = open(file_path, "w")
         f.write(data)
         f.close()

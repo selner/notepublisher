@@ -1,5 +1,6 @@
 #!/bin/python
 # -*- coding: utf-8 -*-
+from strings import xustr
 
 class objdict(dict):
     """ objdict class allows access to its key's values as
@@ -32,6 +33,7 @@ class objdict(dict):
             raise AttributeError("No such attribute: " + name)
 
     def debugprint(self, label):
+        print xustr(label) + unicode("debug print for objdict:\n")
         pp.pprint(self)
         print "\n"
 

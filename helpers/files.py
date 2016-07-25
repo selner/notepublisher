@@ -4,8 +4,7 @@
 import os
 import codecs
 import datetime
-
-xustr = lambda s: unicode(s) or u""
+from strings import xustr
 
 def getDatetimeForFileName(fmt):
     now = datetime.datetime.now()

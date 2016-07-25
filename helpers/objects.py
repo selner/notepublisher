@@ -1,3 +1,5 @@
+#!/bin/python
+# -*- coding: utf-8 -*-
 
 class objdict(dict):
     """ objdict class allows access to its key's values as
@@ -30,7 +32,6 @@ class objdict(dict):
             raise AttributeError("No such attribute: " + name)
 
     def debugprint(self, label):
-        print xstr(label) + "debug print for objdict:\n"
         pp.pprint(self)
         print "\n"
 

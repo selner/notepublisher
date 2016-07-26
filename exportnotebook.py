@@ -94,8 +94,8 @@ class NotebooksExport(object):
         except EvernoteTypes.EDAMSystemException, e:
             if e.errorCode == EvernoteTypes.EDAMErrorCode.RATE_LIMIT_REACHED:
                 print (u"Rate limit reached.  Retrying the request in %d seconds." % e.rateLimitDuration)
-                import datetime
-                datetime.time.sleep(int(e.rateLimitDuration) + 1)
+                import time
+                time.sleep(int(e.rateLimitDuration) + 1)
                 self.exportSearch()
             else:
                 print (u"!!!!! Error:  Failed to access note via Evernote API.  Message:  %s" % unicode(e))
@@ -106,6 +106,5 @@ class NotebooksExport(object):
         except Exception, e:
             helpers.reRaiseException(u"!!!!! Error:  Failed to access note via Evernote API.  Message:", e)
             exit(-1)
-
 
 

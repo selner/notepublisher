@@ -52,8 +52,8 @@ if __name__ == '__main__':
     if("--config" in arguments):
         json_config = load_config_from_json(arguments["--config"])
 
-    # Arguments take priority over INI, INI takes priority over JSON:
-    argresult = merge(arguments, json_config)
+    # Arguments take priority over JSON:
+    argresult = merge(json_config, arguments)
 
     from pprint import pprint
     print('\nArguments:')
@@ -66,3 +66,5 @@ if __name__ == '__main__':
     import exportnotebook
     export = exportnotebook.NotebooksExport(argresult)
     export.exportSearch()
+
+    print (u"Successfully published notes to %s" % arguments["output"])

@@ -233,6 +233,7 @@ class NoteExport(object):
 
         if "fileName" in resource.attributes.__dict__ and resource.attributes.__dict__["fileName"]:
             filename = resource.attributes.__dict__["fileName"]
+
         else:
             fileext = mimetypes.guess_extension(resource.mime, strict=False)
             if fileext is None:
@@ -244,6 +245,10 @@ class NoteExport(object):
         notebookDirectory = getNotebookDirectory(self.output_folder, self.notebook)
         noteResourceDir = getDirectory(os.path.join(notebookDirectory, (self.filename + u"-resources/")))
         file_path = os.path.join(noteResourceDir, filename)
+
+        if len(file_path) > os.pathconf(self.output_folder, "PC_NAME_MAX"):
+            file_path = os.path.join(noteResourceDir, unicode(os.path.splitext(filename)[0][0:8] + os.path.splitext(filename)[1]))
+
         return file_path
 
     def exportResources(self):
@@ -456,8 +461,6 @@ class NoteExport(object):
                 except (Exception, UnicodeEncodeError), e:
                     helpers.reRaiseException(u"!!!!!! ERROR:  Failed to export note '%s' due to error: " % self.noteMetadata.title, e)
 
-
-                helpers.export_html_file(html=exportHTML, path=notebookDirectory, basename=outfilename)
 
             except Exception, e:
                 helpers.reRaiseException(u"!!!!!! ERROR:  Failed to export note '%s' due to error:" % self.noteMetadata.title, e)

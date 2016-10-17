@@ -2,30 +2,8 @@ oauthkeys.json
 
 .idea*
 
-.idea/inspectionProfiles/profiles_settings.xml
-
-.idea/inspectionProfiles/Project_Default.xml
-
-.idea/misc.xml
-
-.idea/modules.xml
-
-.idea/pyEvernotePublish.iml
-
 *.pyc
 
-zzObsolete/EDAMTest.py
-
-oauthkeys.json
-
-oauthkeys.json
-
-PROD-oauthkeys.json
-
-oauthkeys.json
-
-oauthkeys.json
+*.json
 
 *.cfg
-
-notepublisher.cfg

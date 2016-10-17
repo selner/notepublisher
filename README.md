@@ -16,3 +16,19 @@ Options:
                        separated patterns [default: html,enex]
 
 ```
+
+## Evernote API Keys
+To use, you'll need production API keys from Evernote.  Enter your keys into a JSON config file similar to this one:
+```
+{
+   "output" : "/Users/testuser/Documents/NotePublisher",
+   "consumer_key" : "yyyyyyyyyyyyy",
+   "consumer_secret": "zzzzzzzzzzzzzzzzzzzzzzzz",
+   "dev_auth_token": "zzzzzzzzzzzzzzzzzzzzzzzzyyyyyyyyyyyyyyyyyyyyyyyyyyzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+}
+```
+and then specify it on the command line as 
+```
+notepublisher.py <my options> -c myconfig.cfg
+```
+

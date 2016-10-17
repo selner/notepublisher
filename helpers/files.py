@@ -1,8 +1,10 @@
+#!/bin/python
+# -*- coding: utf-8 -*-
+
 import os
 import codecs
 import datetime
-
-xstr = lambda s: str(s) or ""
+from strings import xustr
 
 def getDatetimeForFileName(fmt):
     now = datetime.datetime.now()
@@ -21,7 +23,7 @@ def setupOutputFolder(folderpath):
     if not folderpath:
         raise AttributeError("Error: cannot setup output folder path.  No path specified.")
 
-    if str(folderpath).__contains__("~"):
+    if unicode(folderpath).__contains__("~"):
         folderpath = os.path.expanduser(folderpath)
 
     folderpath = os.path.abspath(folderpath)
@@ -37,13 +39,13 @@ def getOutFileName(prefix=None, basename=None, suffix=None, ext=None, fIncludeDa
     if not ext:
         raise ValueError("Required file extension paramater was not set.")
 
-    if suffix and basename and not str(basename).endswith("_"):
-        suffix = "_" + xstr(suffix)
+    if suffix and basename and not unicode(basename).endswith("_"):
+        suffix = "_" + xustr(suffix)
     else:
         suffix = ""
 
     if prefix and not prefix.endswith("_"):
-        prefix = xstr(prefix) + "_"
+        prefix = xustr(prefix) + "_"
     else:
         prefix = ""
 
@@ -51,7 +53,7 @@ def getOutFileName(prefix=None, basename=None, suffix=None, ext=None, fIncludeDa
     if fIncludeDate:
         ret += getDatetimeForFileName("%m-%d-%Y") + "_"
 
-    ret += xstr(basename) + suffix + "." + ext
+    ret += xustr(basename) + suffix + "." + ext
 
     return ret
 

@@ -1,5 +1,4 @@
 evernote
 lxml
 beautifulsoup4
-git+ssh://git@github.com:CarlLee/ENML_PY.git
 docopt

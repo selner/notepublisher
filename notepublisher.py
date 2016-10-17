@@ -1,10 +1,13 @@
 #!/bin/python
 # -*- coding: utf-8 -*-
 import os
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 cli_usage = """
 Usage:
-  notepublisher.py [-c FILE] [-o DIR] [--matchstack=STRING]
+  notepublisher.py [-c FILE] [-o DIR] [--matchstack=STRING] [--matchnotebook=STRING]
   notepublisher.py --version
 
 Options:
@@ -13,7 +16,8 @@ Options:
   -v --verbose  print status messages
   -o DIR --output=DIR  output directory [default: ./]
   -c FILE --config=FILE  config settings directory [default: ./notepublisher.cfg]
-  --matchstack=STRING  string to match stack names against when searching for notebooks
+  --matchstack=STRING  string to match stack names against when searching
+  --matchnotebook=STRING  string to match notebook names against when searching
 """
 
 from docopt import docopt
@@ -25,7 +29,7 @@ def merge(dict_1, dict_2):
     `dict_1` takes priority over `dict_2`.
 
     """
-    return dict((str(key), dict_1.get(key) or dict_2.get(key))
+    return dict((unicode(key), dict_1.get(key) or dict_2.get(key))
                 for key in set(dict_2) | set(dict_1))
 
 def load_config_from_json(filepath):
@@ -48,8 +52,8 @@ if __name__ == '__main__':
     if("--config" in arguments):
         json_config = load_config_from_json(arguments["--config"])
 
-    # Arguments take priority over INI, INI takes priority over JSON:
-    argresult = merge(arguments, json_config)
+    # Arguments take priority over JSON:
+    argresult = merge(json_config, arguments)
 
     from pprint import pprint
     print('\nArguments:')
@@ -61,4 +65,6 @@ if __name__ == '__main__':
 
     import exportnotebook
     export = exportnotebook.NotebooksExport(argresult)
-    export.exportStack(argresult["--matchstack"])
+    export.exportSearch()
+
+    print (u"Successfully published notes to %s" % arguments["output"])

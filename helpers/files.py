@@ -66,6 +66,11 @@ def save_text_file(path=None, basename=None, ext="txt", textdata=None, encoding=
     """
 
     file = getOutFileName(basename=basename, ext=ext)
+    try:
+        os.mkdir(path)
+    except:
+        pass
+
     filepath = os.path.join(path, file)
 
     f = codecs.open(filepath, encoding=encoding, mode='w+')

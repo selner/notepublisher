@@ -7,3 +7,4 @@ oauthkeys.json
 *.json
 
 *.cfg
+.venv

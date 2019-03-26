@@ -3,6 +3,5 @@
 
 
 def reRaiseException(prefixmsg="", exception=None):
-    newmsg = unicode(prefixmsg) + u" " + unicode(exception)
-    raise type(exception)(newmsg)
+    raise type(exception)(u"{} {}".format(prefixmsg, exception))
 

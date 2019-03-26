@@ -2,3 +2,6 @@ evernote
 lxml
 beautifulsoup4
 docopt
+requests
+unidecode
+cachecontrol

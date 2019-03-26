@@ -2,9 +2,16 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-reload(sys)
-sys.setdefaultencoding('utf-8')
+# reload(sys)
+# sys.setdefaultencoding('utf-8')
+import logging
+logger = logging.getLogger()
 
+# Create handlers
+c_handler = logging.StreamHandler()
+logger.setLevel(logging.DEBUG)
+
+#
 cli_usage = """
 Usage:
   notepublisher.py [-c FILE] [-o DIR] [--matchstack=STRING] [--matchnotebook=STRING] [--formats=PATTERNS]

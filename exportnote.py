@@ -193,19 +193,29 @@ def _getNotebookExportDirectory(output_folder, notebook, typeSubfolder = ""):
 
 class NoteExport(object):
     _note = None
-
+    _notebook = None
+    _client = None
+    
     def __init__(self, client, outputFolder=None, resourceUriPrefix=None, noteMetadata=None, note=None, notebook=None,
                  tags=None, formats=[]):
+        self._client = client
         self.resourceUriPrefix = resourceUriPrefix
         self._note = note
         self.oauth_token = client.token
         self.noteMetadata = noteMetadata
-        self.notebook = notebook
-        self.note_store = client.get_note_store()
+        self._notebook = notebook
         self.tags = tags
         self.output_folder = outputFolder
         self.note_resources_by_hash = {}
         self.formats = formats
+
+    @property
+    def client(self):
+        return self._client
+
+    @property
+    def notebook(self):
+        return self._notebook
 
     @property
     def title(self):
@@ -218,8 +228,12 @@ class NoteExport(object):
     @property
     def note(self):
         if not self._note and self.noteMetadata:
-            # self.note = self.note_store.getNote(guid=noteMetadata.guid, withContent=1, withResourcesData=1, withResourcesRecognition=0, withResourcesAlternateData=0)
-            self._note = self.note_store.getNote(self.oauth_token, self.noteMetadata.guid, True, True, False, False)
+            try:
+                # self.note = self.note_store.getNote(guid=noteMetadata.guid, withContent=1, withResourcesData=1, withResourcesRecognition=0, withResourcesAlternateData=0)
+                self._note = self.client.note_store.getNote(self.oauth_token, self.noteMetadata.guid, True, True, False, False)
+            except Exception, e:
+                helpers.reRaiseException(u"!!!!!! ERROR:  Failed to export note '%s' due to error:" % self.noteMetadata.title, e)
+
         return self._note
 
     @note.setter
@@ -255,17 +269,15 @@ class NoteExport(object):
 
     def export(self):
 
-        if not self.note and self.noteMetadata:
-            # self.note = self.note_store.getNote(guid=noteMetadata.guid, withContent=1, withResourcesData=1, withResourcesRecognition=0, withResourcesAlternateData=0)
-            self.note = self.note_store.getNote(self.oauth_token, self.noteMetadata.guid, True, False, True, False)
+        try:
+            if self.formats == [] or "enex" in self.formats:
+                self._export_enex(self.note)
 
-        if self.formats == [] or "enex" in self.formats:
-            self._export_enex(self.note)
-
-        if self.formats == [] or "html" in self.formats:
-            self._export_html(self.note)
-
-
+            if self.formats == [] or "html" in self.formats:
+                self._export_html(self.note)
+        except Exception, e:
+            print("Unable to save note %s due to error:  %s" % self.note.title, e)
+            pass
 
     def _addAttributeDivTag(self, soup, parentTag, heading, value):
 
@@ -297,7 +309,6 @@ class NoteExport(object):
         # strFactsHTML = u""
 
         try:
-
             for key in attr:
                 if attr[key] is not None and attr[key] != 0:
                     key = escape(unicode(key))
@@ -343,6 +354,9 @@ class NoteExport(object):
         output_folder = _getNotebookExportDirectory(self.output_folder, self.notebook, "enex")
 
         try:
+            enex_content = self.client.note_store.getNoteContent(self.oauth_token, self.noteMetadata.guid)
+            if isinstance(enex_content, str):
+                enex_content = unicode(enex_content, 'utf-8', 'replace')
 
             # get resources of the note
             noteExport = self.note
@@ -364,8 +378,8 @@ class NoteExport(object):
             enexContent = enexContent + "\n</note>\n</en-export>"
 
             outfile = helpers.save_text_file(path=output_folder, ext='enex', basename=self.filename,
-                                             textdata=enexContent, encoding='utf-8')
-            print(u"Published " + self.note.title + " to " + outfile)
+                                             textdata=enex_content, encoding='utf-8')
+            print(u"Published " + note.title + " to " + outfile)
 
         except Exception, e:
             helpers.reRaiseException(u"!!!!!! ERROR:  Failed to export note '%s' due to error:" % note.title, e)
@@ -481,7 +495,7 @@ class NoteExport(object):
                 tagContent.replace_with(copy.copy(soupNoteHTML.body))
 
                 try:
-                    exportHTML = soupExport.prettify(formatter=u"html").encode(u'utf-8')
+                    exportHTML = unicode(soupExport.prettify(formatter=u"html").encode(u'utf-8'), 'utf-8', 'replace')
                     outfile = helpers.export_html_file(path=output_folder, basename=self.filename,
                                                        html=exportHTML, encoding='utf-8')
                     print(u"Published " + self.note.title + " to " + outfile)

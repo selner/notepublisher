@@ -4,7 +4,7 @@
 __name__ = "NotePublisher"
 import evernote.edam.notestore.NoteStore as NoteStore
 import evernote.edam.error.ttypes as EvernoteTypes
-from client import getEvernoteClient, getLastOAuthToken
+from session import EvernoteSession
 import helpers
 from exportnote import NoteExport
 try:
@@ -13,49 +13,34 @@ except ImportError:
     from cgi import escape  # python 2.x
 
 
-
 class NotebooksExport(object):
 
     def __init__(self, arguments=None):
         self.arguments = arguments
-        self.client = getEvernoteClient(**arguments)
-        self.note_store = self.client.get_note_store()
-        self.oauth_token = getLastOAuthToken()
-        self.user = self.client.get_user_store().getUser()
-        self.userPublicInfo = self.client.get_user_store().getPublicUserInfo(self.user.username)
-        self.resourceUriPrefix = "%sres" % self.userPublicInfo.webApiUrlPrefix
-        self.tags = dict([(t.guid, t) for t in self.note_store.listTags()])
+        self.client = EvernoteSession()
+        self.client.connect(**arguments)
 
-    def get_notebooks(self):
-        if self.note_store is None:
-            self.note_store  = self.client.get_note_store()
-        notebooks = self.note_store.listNotebooks()
-        return {n.name: n for n in notebooks}
+        # self.note_store = self.client.note_store
+        # self.oauth_token = getLastOAuthToken()
+        # self.user = self.client.get_user_store().getUser()
+        # self.userPublicInfo = self.client.get_user_store().getPublicUserInfo(self.user.username)
+        self.resourceUriPrefix = "%sres" % self.client.user_store.getPublicUserInfo(self.client.user.username).webApiUrlPrefix
 
-    def filter_noteboooks_by_stack(self, notebooks, matchString):
-        print (u"Filtering notebooks to stacks matching '%s'..." % matchString)
-        matchedbooks = {key: value for key, value in notebooks.items() if value.stack is not None and matchString in value.stack}
-        return matchedbooks
-
-    def filter_noteboooks_by_name(self, notebooks, matchString):
-        print (u"Filtering notebooks to titles including '%s'..." % matchString)
-        matchedbooks = {key: value for key, value in notebooks.items() if value.name is not None and matchString in value.name}
-        return matchedbooks
-
+    def filter_noteboooks_by_fact(self, fact, matchString):
+        print (u"Filtering notebooks to %s matching '%s'..." % (fact, matchString))
+        matched = {getattr(n, fact): n for n in self.client.notebooks.values() if getattr(n, fact) and matchString in getattr(n, fact) }
+        return matched
 
     def exportSearch(self):
 
         try:
-            self.note_store = self.client.get_note_store()
-            notebooks = self.get_notebooks()
+            notebooks = {}
 
             if "--matchstack" in self.arguments and self.arguments["--matchstack"] is not None:
-                notebooks = self.filter_noteboooks_by_stack(notebooks, self.arguments["--matchstack"])
+                notebooks = self.filter_noteboooks_by_fact('stack', self.arguments["--matchstack"])
 
             if "--matchnotebook" in self.arguments and self.arguments["--matchnotebook"] is not None:
-                notebooks = self.filter_noteboooks_by_name(notebooks, self.arguments["--matchnotebook"])
-
-            self.note_store = self.client.get_note_store()
+                notebooks =  self.filter_noteboooks_by_fact('name', self.arguments["--matchnotebook"])
 
             for key in notebooks:
                 notebook = notebooks[key]
@@ -65,16 +50,16 @@ class NotebooksExport(object):
                 if notebook is not None:
                     filter.notebookGuid = notebook.guid
                 else:
-                    filter.notebookGuid = self.note_store.defaultNotebook.guid
+                    filter.notebookGuid = self.client.default_notebook.guid
 
                 # offset = 0;
                 # pageSize = 10;
                 # notes = [];
                 # resultSpec = { "includeTitle": True, "includeNotebookGuid":True, "includeAttributes":True, "includeContentLength" :True }
 
-                allNoteResults = self.note_store.findNotes(self.client.token, filter, 0, 9999)
+                allNoteResults = self.client.note_store.findNotes(self.client.token, filter, 0, 9999)
                 for noteMeta in allNoteResults.notes:
-                    noteexp = NoteExport(client=self.client, outputFolder=self.arguments["output"], noteMetadata=noteMeta, notebook=notebook, tags=self.tags, resourceUriPrefix=self.resourceUriPrefix)
+                    noteexp = NoteExport(client=self.client, outputFolder=self.arguments["output"], noteMetadata=noteMeta, notebook=notebook, tags=self.client.tags, resourceUriPrefix=self.resourceUriPrefix)
                     noteexp.export()
 
                 # allNoteResults = self.note_store.findNotesMetadata(self.client.token, filter, offset, pageSize, spec = resultSpec)

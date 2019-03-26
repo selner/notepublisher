@@ -64,21 +64,25 @@ def save_text_file(path=None, basename=None, ext="txt", textdata=None, encoding=
         be <testname>_results.txt.
     :return: the path of the file
     """
-
-    file = getOutFileName(basename=basename, ext=ext)
     try:
-        os.mkdir(path)
-    except:
-        pass
+        file = getOutFileName(basename=basename, ext=ext)
+        try:
+            os.mkdir(path)
+        except:
+            pass
 
-    filepath = os.path.join(path, file)
+        filepath = os.path.join(path, file)
 
-    f = codecs.open(filepath, encoding=encoding, mode='w+')
+        f = codecs.open(filepath, encoding=encoding, mode='w+')
 
-    f.write(textdata)
-    f.close()
+        f.write(textdata)
+        f.close()
 
-    return filepath
+        return filepath
+
+    except Exception, e:
+        import helpers
+        helpers.reRaiseException(u"!!!!!! ERROR:  Failed to export file '%s' due to error:" % filepath, e)
 
 
 def export_html_file(path=None, basename=None, html=None, encoding='utf-8'):

@@ -1,7 +1,5 @@
 #!/bin/python
 # -*- coding: utf-8 -*-
 
-xustr = lambda s: unicode(s) or u""
+xustr = lambda s: s or ""
 
-def __str__(self):
-    return unicode(self).encode('utf-8')

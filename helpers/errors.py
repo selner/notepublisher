@@ -3,5 +3,5 @@
 
 
 def reRaiseException(prefixmsg="", exception=None):
-    raise type(exception)(u"{} {}".format(prefixmsg, exception))
+    raise Exception(f'{prefixmsg} {exception}')
 

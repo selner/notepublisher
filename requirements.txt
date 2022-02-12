@@ -1,7 +1,8 @@
-evernote
+evernote3==1.25.12
 lxml
 beautifulsoup4
 docopt
 requests
 unidecode
 cachecontrol
+httplib2

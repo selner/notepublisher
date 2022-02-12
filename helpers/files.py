@@ -4,7 +4,7 @@
 import os
 import codecs
 import datetime
-from strings import xustr
+from helpers.strings import xustr
 
 def getDatetimeForFileName(fmt):
     now = datetime.datetime.now()
@@ -23,7 +23,7 @@ def setupOutputFolder(folderpath):
     if not folderpath:
         raise AttributeError("Error: cannot setup output folder path.  No path specified.")
 
-    if unicode(folderpath).__contains__("~"):
+    if folderpath.__contains__("~"):
         folderpath = os.path.expanduser(folderpath)
 
     folderpath = os.path.abspath(folderpath)
@@ -39,7 +39,7 @@ def getOutFileName(prefix=None, basename=None, suffix=None, ext=None, fIncludeDa
     if not ext:
         raise ValueError("Required file extension paramater was not set.")
 
-    if suffix and basename and not unicode(basename).endswith("_"):
+    if suffix and basename and not basename.endswith("_"):
         suffix = "_" + xustr(suffix)
     else:
         suffix = ""
@@ -72,17 +72,14 @@ def save_text_file(path=None, basename=None, ext="txt", textdata=None, encoding=
             pass
 
         filepath = os.path.join(path, file)
-
-        f = codecs.open(filepath, encoding=encoding, mode='w+')
-
-        f.write(textdata)
-        f.close()
+        with open(filepath, mode="w") as f:
+            f.write(textdata)
 
         return filepath
 
-    except Exception, e:
+    except Exception as e:
         import helpers
-        helpers.reRaiseException(u"!!!!!! ERROR:  Failed to export file '%s' due to error:" % filepath, e)
+        helpers.reRaiseException(f'!!!!!! ERROR:  Failed to export file "{filepath}" due to error: {e}')
 
 
 def export_html_file(path=None, basename=None, html=None, encoding='utf-8'):

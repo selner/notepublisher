@@ -1,7 +1,7 @@
 #!/bin/python
 # -*- coding: utf-8 -*-
 
-__name__ = u"NotePublisher"
+__name__ = "NotePublisher"
 import os
 import helpers
 import datetime
@@ -30,7 +30,7 @@ def scrubPathPart(pathpart, lowercase=False):
     return pathpart
 
 
-PAGE_BASE_LAYOUT = u"""
+PAGE_BASE_LAYOUT = """
 <HTML>
 <HEAD>
 <!-- exported by Note Publisher - https://github.com/selner/NotePublisher --></BODY>
@@ -168,7 +168,7 @@ body {
 </STYLE>
 </HEAD>
 <BODY>
-<H1 id="note-heading" style=u"margin-bottom: 5px;"></H1>
+<H1 id="note-heading" style="margin-bottom: 5px;"></H1>
 <HR/><DIV id="note-content">%s</DIV>
 </HTML>
 
@@ -187,7 +187,15 @@ def _getNotebookExportDirectory(output_folder, notebook, typeSubfolder = ""):
     if typeSubfolder:
         output_folder = os.path.join(output_folder, typeSubfolder)
 
-    notebookDirectory = os.path.join(output_folder, scrubPathPart(notebook.name, lowercase=False))
+    notebookDirectory = output_folder
+
+    if notebook.stack:
+        notebookstack = scrubPathPart(notebook.stack, lowercase=False)
+        notebookDirectory = os.path.join(notebookDirectory, notebookstack)
+
+    notebookname = scrubPathPart(notebook.name, lowercase=False)
+    notebookDirectory = os.path.join(notebookDirectory, notebookname)
+
     return getDirectory(notebookDirectory)
 
 
@@ -214,7 +222,12 @@ class NoteExport(object):
         return self._client
 
     @property
+    def notestore(self):
+        return self._client.note_store
+
+    @property
     def notebook(self):
+
         return self._notebook
 
     @property
@@ -231,8 +244,8 @@ class NoteExport(object):
             try:
                 # self.note = self.note_store.getNote(guid=noteMetadata.guid, withContent=1, withResourcesData=1, withResourcesRecognition=0, withResourcesAlternateData=0)
                 self._note = self.client.note_store.getNote(self.oauth_token, self.noteMetadata.guid, True, True, False, False)
-            except Exception, e:
-                helpers.reRaiseException(u"!!!!!! ERROR:  Failed to export note '%s' due to error:" % self.noteMetadata.title, e)
+            except Exception as e:
+                helpers.reRaiseException(f'!!!!!! ERROR:  Failed to export note {self.noteMetadata.title} due to error: {e}')
 
         return self._note
 
@@ -253,45 +266,50 @@ class NoteExport(object):
         else:
             fileext = mimetypes.guess_extension(resource.mime, strict=False)
             if fileext is None:
-                fileext = u"." + resource.mime.split(u"/")[1]
+                fileext = "." + resource.mime.split("/")[1]
             if fileext.startswith(u'.jpe'):
-                fileext = u".jpg"
-            filename = u"%s%s" % (resource.guid, fileext)
+                fileext = ".jpg"
+            filename = "%s%s" % (resource.guid, fileext)
 
-        noteResourceDir = getDirectory(os.path.join(output_parent_folder, (self.filename + u"-resources/")))
+        noteResourceDir = getDirectory(os.path.join(output_parent_folder, (self.filename + "-resources/")))
         file_path = os.path.join(noteResourceDir, filename)
 
         if len(file_path) > os.pathconf(self.output_folder, "PC_NAME_MAX"):
             file_path = os.path.join(noteResourceDir,
-                                     unicode(os.path.splitext(filename)[0][0:8] + os.path.splitext(filename)[1]))
+                                     os.path.splitext(filename)[0][0:8] + os.path.splitext(filename)[1])
 
         return file_path
 
     def export(self):
 
         try:
+
+            output_folder = _getNotebookExportDirectory(self.output_folder, self.notebook, "enex")
+
             if self.formats == [] or "enex" in self.formats:
                 self._export_enex(self.note)
 
             if self.formats == [] or "html" in self.formats:
+                self.xmltransform()
                 self._export_html(self.note)
-        except Exception, e:
-            print("Unable to save note %s due to error:  %s" % self.note.title, e)
+
+        except Exception as e:
+            print(f'Unable to save note {self.note.title} due to error:  {e}')
             pass
 
     def _addAttributeDivTag(self, soup, parentTag, heading, value):
 
-        newdiv = soup.new_tag(u"div")
-        newdiv["class"] = u"metafact"
+        newdiv = soup.new_tag("div")
+        newdiv["class"] = "metafact"
         parentTag.append(newdiv)
 
-        newSpan = soup.new_tag(u"span")
-        newSpan["class"] = u"metafact heading"
+        newSpan = soup.new_tag("span")
+        newSpan["class"] = "metafact heading"
         newSpan.string = heading
         newdiv.append(newSpan)
 
-        newSpanVal = soup.new_tag(u"span")
-        newSpanVal["class"] = u"metafact value"
+        newSpanVal = soup.new_tag("span")
+        newSpanVal["class"] = "metafact value"
         newSpanVal.string = value
         newdiv.append(newSpanVal)
 
@@ -303,42 +321,42 @@ class NoteExport(object):
             soupNote.body.insert_before(soupNote.new_tag(u'head'))
 
         parentDiv = soupNote.new_tag(u'div')
-        parentDiv.attrs["id"] = u"note-metadata"
+        parentDiv.attrs["id"] = "note-metadata"
         soupNote.body.append(parentDiv)
 
-        # strFactsHTML = u""
+        # strFactsHTML = ""
 
         try:
             for key in attr:
                 if attr[key] is not None and attr[key] != 0:
-                    key = escape(unicode(key))
-                    value = escape(unicode(attr[key]))
+                    key = escape(key)
+                    value = escape(attr[key])
                     metatag = soupNote.new_tag(u'meta')
                     metatag.attrs['content'] = value
                     metatag.attrs['name'] = key
                     soupNote.head.append(metatag)
 
                     parentDiv = self._addAttributeDivTag(soup=soupNote, parentTag=parentDiv, heading=key, value=value)
-        except Exception, e:
+        except Exception as e:
             helpers.reRaiseException(
-                u"!!!!!! ERROR:  Failed to export metadata for note '$s' due to error: " % self.noteMetadata.title, e)
+                "!!!!!! ERROR:  Failed to export metadata for note '$s' due to error: " % self.noteMetadata.title, e)
 
         try:
             tagNames = []
             for t in self.note.tags:
                 tagNames.append(self.tags[t])
-            if tagNames and tagNames.count() > 0:
-                parentDiv = self._addAttributeDivTag(soup=soupNote, parentTag=parentDiv, heading=u"Tags",
-                                                     value=u", ".join(tagNames))
+            if tagNames and tagNames.count > 0:
+                parentDiv = self._addAttributeDivTag(soup=soupNote, parentTag=parentDiv, heading="Tags",
+                                                     value=", ".join(tagNames))
         except Exception:
             pass
 
         now = datetime.datetime.now()
-        nowstr = now.strftime(u"%x %X")
-        parentDiv = self._addAttributeDivTag(soup=soupNote, parentTag=parentDiv, heading=u"Exported", value=nowstr)
+        nowstr = now.strftime("%x %X")
+        parentDiv = self._addAttributeDivTag(soup=soupNote, parentTag=parentDiv, heading="Exported", value=nowstr)
         # divNote.insert(0, divAttr)
 
-        parentDiv = self._addAttributeDivTag(soup=soupNote, parentTag=parentDiv, heading=u"Notebook",
+        parentDiv = self._addAttributeDivTag(soup=soupNote, parentTag=parentDiv, heading="Notebook",
                                              value=self.notebook.name)
         # divNote.insert(0, divAttr)
 
@@ -350,39 +368,71 @@ class NoteExport(object):
 
         return soupNote
 
+    def _wrap_outer_enex(self, title, body):
+        return f'<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE en-export SYSTEM \"http://xml.evernote.com/pub/evernote-export3.dtd\">\n<en-export export-date=\"20161017T021119Z\" application=\"NotePublisher\"><note>\n<title>{title}</title>\n<content><![CDATA[{body}]]></content>\n</note>\n</en-export>'
+
     def _export_enex(self, note):
         output_folder = _getNotebookExportDirectory(self.output_folder, self.notebook, "enex")
 
         try:
             enex_content = self.client.note_store.getNoteContent(self.oauth_token, self.noteMetadata.guid)
-            if isinstance(enex_content, str):
-                enex_content = unicode(enex_content, 'utf-8', 'replace')
 
             # get resources of the note
             noteExport = self.note
-            enexContent = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE en-export SYSTEM \"http://xml.evernote.com/pub/evernote-export3.dtd\">\n<en-export export-date=\"20161017T021119Z\" application=\"NotePublisher\">\n" \
-                          "<note>\n<title>{}</title>\n<content><![CDATA[{}]]></content>\n".format(
-                self._note.title,
-                noteExport.content
-            )
-
+            enexContent = f'<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE en-export SYSTEM \"http://xml.evernote.com/pub/evernote-export3.dtd\">\n<en-export export-date=\"20161017T021119Z\" application=\"NotePublisher\">\n' \
+                          '<note>\n<title>{self._note.title}</title>\n<content><![CDATA[{noteExport.content}]]></content>\n'
             import re
             if noteExport.resources:
                 for r in noteExport.resources:
-                    resource = self.note_store.getResource(r.guid, True, False, True, False)
-                    xml = '\n<resource>\n<data encoding="base64">{}</data>\n<mime>{}</mime>\n</resource>\n'.format(
-                        b64encode(resource.data.body),
-                        resource.mime
-                    )
+
+                    resource = self.notestore.getResource(r.guid, True, False, True, False)
+                    filepath = os.path.join(self.output_folder, f'resource_{r.guid}')
+                    with open(filepath, 'wb') as out_file:
+                        from shutil import copyfileobj
+                        out_file.write(resource.data.body)
+                    resbody = b64encode(resource.data.body)
+                    xml = '\n<resource>\n<data encoding="base64">' + resbody.decode() + '</data>\n<mime>' + resource.mime + '</mime>\n</resource>'
                     enexContent = enexContent + xml
             enexContent = enexContent + "\n</note>\n</en-export>"
 
             outfile = helpers.save_text_file(path=output_folder, ext='enex', basename=self.filename,
                                              textdata=enex_content, encoding='utf-8')
-            print(u"Published " + note.title + " to " + outfile)
+            print("Published " + note.title + " to " + outfile)
 
-        except Exception, e:
-            helpers.reRaiseException(u"!!!!!! ERROR:  Failed to export note '%s' due to error:" % note.title, e)
+        except Exception as e:
+            helpers.reRaiseException(f'!!!!!! ERROR:  Failed to export note \'{ note.title }\' due to error:  {e}')
+
+    def _downloadResource(self, resource, filepath=None):
+        url = f'{self.resourceUriPrefix}/{resource.guid}'
+
+        if not filepath:
+            filepath = os.path.join(self.output_folder, f'resource{resource.guid}')
+
+
+        if not os.path.exists(os.path.dirname(filepath)):
+            os.makedirs(os.path.dirname(filepath))
+        try:
+            if resource.data.body:
+                data = resource.data.body
+        except:
+            res_url = self.resourceUriPrefix + resource.guid
+            try:
+                response = requests.post(url=res_url, auth=self.oauth_token)
+                data = response.content
+            except Exception as e:
+                print(e)
+                from helpers import reRaiseException
+                reRaiseException(e)
+                # print(f'!!!!! Error:  Failed download resource from Evernote.  URL: {res_url}  Message:  {e}')
+
+        response = requests.post(url=url, auth=self.oauth_token)
+        if response.code == 200:
+            data = response.content
+            with open(filepath, 'wb') as out_file:
+                from shutil import copyfileobj
+                copyfileobj(data, out_file)
+        else:
+            raise Exception(f'Unable to download {url} to {filepath}:  {response}')
 
     def _exportResourcesForHTML(self, note, output_parent_folder):
         if note is None:
@@ -390,7 +440,7 @@ class NoteExport(object):
         note_resources_by_hash = {}
 
         try:
-            if note.resources and note.resources.count > 0:
+            if note.resources and len(note.resources) > 0:
                 for i in range(0, len(note.resources)):
                     resource = note.resources[i]
 
@@ -399,13 +449,12 @@ class NoteExport(object):
                         if resource.data.body:
                             data = resource.data.body
                     except:
-                        res_url = u"%s/%s" % (self.resourceUriPrefix, resource.guid)
+                        res_url = self.resourceUriPrefix + resource.guid
                         try:
                             response = requests.post(url=res_url, auth=self.oauth_token)
                             data = response.content
-                        except Exception, e:
-                            print (u"!!!!! Error:  Failed download resource from Evernote.  URL: %s  Message:  %s" % (
-                                res_url, e.message))
+                        except Exception as e:
+                            print (f'!!!!! Error:  Failed download resource from Evernote.  URL: {res_url}  Message:  {e}')
                             continue
 
                     # calculate hashcode for media
@@ -414,15 +463,15 @@ class NoteExport(object):
                     hashcode = md5.hexdigest()
 
                     file_path = self._getFilePathForResource(resource, output_parent_folder)
-                    f = open(file_path, u"w")
+                    f = open(file_path, "w")
                     f.write(data)
                     f.close()
 
                     note_resources_by_hash[hashcode] = resource
                 return note_resources_by_hash
 
-        except Exception, e:
-            helpers.reRaiseException(u"Failed to export resource files for note %s.  Error:  " % self.note.title, e)
+        except Exception as e:
+            helpers.reRaiseException("Failed to export resource files for note %s.  Error:  " % self.note.title, e)
 
     def _export_html(self, note):
 
@@ -432,16 +481,16 @@ class NoteExport(object):
             if note.resources:
                 try:
                     resourcesByHash = self._exportResourcesForHTML(note, output_folder)
-                except Exception, e:
-                    helpers.reRaiseException(u"Unable to export resources for note due to error:", e)
+                except Exception as e:
+                    helpers.reRaiseException("Unable to export resources for note due to error:", e)
 
-            soupExport = BeautifulSoup.BeautifulSoup(PAGE_BASE_LAYOUT, u"lxml")
+            soupExport = BeautifulSoup.BeautifulSoup(PAGE_BASE_LAYOUT, "lxml")
             soupExport.title.string = self.noteMetadata.title
             soupExport.h1.string = self.noteMetadata.title
 
             try:
 
-                soupNoteHTML = BeautifulSoup.BeautifulSoup(note.content, u"lxml", from_encoding=u"utf-8")
+                soupNoteHTML = BeautifulSoup.BeautifulSoup(note.content, "lxml")
                 soupNoteHTML = self._insertMetadataFactsToHTML(soupNote=soupNoteHTML)
 
                 # resources = set(self.note.resources.all())
@@ -460,53 +509,53 @@ class NoteExport(object):
 
                 all_media = soupNoteHTML.find_all(u'en-media')
                 for mediatag in all_media:
-                    media_type = mediatag['type'].split(u"/")[0]
-                    if media_type.lower() == u"image":
+                    media_type = mediatag['type'].split("/")[0]
+                    if media_type.lower() == "image":
                         new_tag = soupNoteHTML.new_tag(u'img')
                         new_tag['src'] = self._getFilePathForResource(resourcesByHash[mediatag["hash"]], output_folder)
                         mediatag.replace_with(new_tag)
-                    # elif media_type.lower() != u"image":
+                    # elif media_type.lower() != "image":
                     #     new_tag = soupNoteHTML.new_tag(u'img')
                     #     new_tag['src'] = self._getFilePathForResource(resourcesByHash[mediatag["hash"]])
                     #     mediatag.replace_with(new_tag)
                     #
-                    # if media_type.lower() != u"image":
+                    # if media_type.lower() != "image":
                     else:
                         new_tag = soupNoteHTML.new_tag(u'div')
-                        new_tag['class'] = u"document-heading"
-                        new_tag.string = u"Attached document:  "
+                        new_tag['class'] = "document-heading"
+                        new_tag.string = "Attached document:  "
 
                         link_tag = soupNoteHTML.new_tag(u'a')
                         filepath = self._getFilePathForResource(resourcesByHash[mediatag["hash"]], output_folder)
                         link_tag['href'] = filepath
-                        link_tag['class'] = u"document-item"
+                        link_tag['class'] = "document-item"
                         link_tag['filetype'] = os.path.splitext(filepath)[1]
 
                         childspan = soupNoteHTML.new_tag(u'span')
-                        childspan['class'] = u"fileCorner"
-                        link_tag.string = u"%s" % os.path.basename(filepath)
+                        childspan['class'] = "fileCorner"
+                        link_tag.string = "%s" % os.path.basename(filepath)
                         link_tag.insert(0, new_child=childspan)
                         new_tag.insert(1, new_child=link_tag)
 
                         mediatag.replace_with(new_tag)
 
-                tagContent = soupExport.find(id=u"note-content")
+                tagContent = soupExport.find(id="note-content")
                 import copy
                 tagContent.replace_with(copy.copy(soupNoteHTML.body))
 
                 try:
-                    exportHTML = unicode(soupExport.prettify(formatter=u"html").encode(u'utf-8'), 'utf-8', 'replace')
+                    exportHTML = soupExport.prettify(formatter="html").encode(u'utf-8')
                     outfile = helpers.export_html_file(path=output_folder, basename=self.filename,
                                                        html=exportHTML, encoding='utf-8')
-                    print(u"Published " + self.note.title + " to " + outfile)
-                except (Exception, UnicodeEncodeError), e:
-                    helpers.reRaiseException(u"!!!!!! ERROR:  Failed to export note '%s' due to error: " % self.noteMetadata.title, e)
+                    print("Published " + self.note.title + " to " + outfile)
+                except UnicodeEncodeError as e:
+                    helpers.reRaiseException("!!!!!! ERROR:  Failed to export note '%s' due to error: " % self.noteMetadata.title, e)
 
-            except KeyError, e:
+            except KeyError as e:
                 helpers.reRaiseException(
-                    u"!!!!!! ERROR:  Unable to find attachment %s to export for note:" % self.noteMetadata.title, e)
+                    "!!!!!! ERROR:  Unable to find attachment %s to export for note:" % self.noteMetadata.title, e)
                 pass
-        except Exception, e:
+        except Exception as e:
             helpers.reRaiseException(
-                u"!!!!!! ERROR:  Failed to export note '%s' due to error: " % self.noteMetadata.title, e)
+                "!!!!!! ERROR:  Failed to export note '%s' due to error: " % self.noteMetadata.title, e)
 

@@ -24,10 +24,11 @@ class NotebooksExport(object):
         # self.oauth_token = getLastOAuthToken()
         # self.user = self.client.get_user_store().getUser()
         # self.userPublicInfo = self.client.get_user_store().getPublicUserInfo(self.user.username)
-        self.resourceUriPrefix = "%sres" % self.client.user_store.getPublicUserInfo(self.client.user.username).webApiUrlPrefix
+        user = self.client.user_store.getPublicUserInfo(self.client.user.username)
+        self.resourceUriPrefix = user.webApiUrlPrefix + "res"
 
     def filter_noteboooks_by_fact(self, fact, matchString):
-        print (u"Filtering notebooks to %s matching '%s'..." % (fact, matchString))
+        print ("Filtering notebooks to %s matching '%s'..." % (fact, matchString))
         matched = {getattr(n, fact): n for n in self.client.notebooks.values() if getattr(n, fact) and matchString in getattr(n, fact) }
         return matched
 
@@ -76,20 +77,20 @@ class NotebooksExport(object):
                 #     offset = offset + allNoteResults.getNotesSize()
 
 
-        except EvernoteTypes.EDAMSystemException, e:
+        except EvernoteTypes.EDAMSystemException as e:
             if e.errorCode == EvernoteTypes.EDAMErrorCode.RATE_LIMIT_REACHED:
-                print (u"Rate limit reached.  Retrying the request in %d seconds." % e.rateLimitDuration)
+                print ("Rate limit reached.  Retrying the request in %d seconds." % e.rateLimitDuration)
                 import time
                 time.sleep(int(e.rateLimitDuration) + 1)
                 self.exportSearch()
             else:
-                print (u"!!!!! Error:  Failed to access note via Evernote API.  Message:  %s" % unicode(e))
+                print ("!!!!! Error:  Failed to access note via Evernote API.  Message:  %s" % e)
                 exit(-1)
-        except EvernoteTypes.EDAMUserException, e:
-            print (u"Invalid Evernote API request.  Please check the call parameters.  Message: %s" % unicode(e))
+        except EvernoteTypes.EDAMUserException as e:
+            print ("Invalid Evernote API request.  Please check the call parameters.  Message: %s" % e)
             exit(-1)
-        except Exception, e:
-            helpers.reRaiseException(u"!!!!! Error:  Failed to access note via Evernote API.  Message:", e)
+        except Exception as e:
+            helpers.reRaiseException("!!!!! Error:  Failed to access note via Evernote API.  Message:", e)
             exit(-1)
 
 

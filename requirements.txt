@@ -1,8 +1,18 @@
+# Evernote client
 evernote3==1.25.12
+
+# Note parsing / HTML conversion
 lxml
 beautifulsoup4
-docopt
-requests
 unidecode
+
+# API calls
+requests
 cachecontrol
 httplib2
+
+# cli
+click
+
+# logging
+loguru

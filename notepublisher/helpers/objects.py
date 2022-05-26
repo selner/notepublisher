@@ -1,13 +1,14 @@
 #!/bin/python
 # -*- coding: utf-8 -*-
-from helpers.strings import xustr
+from notepublisher.helpers.strings import xustr
 
-class objdict(dict):
-    """ objdict class allows access to its key's values as
-        attributes such as objdict.key = True or the dict way
-        objdict['key'] = True.
 
-        objdefaultdict functions the same as objdict except that
+class ObjDict(dict):
+    """ ObjDict class allows access to its key's values as
+        attributes such as ObjDict.key = True or the dict way
+        ObjDict['key'] = True.
+
+        ObjDefaultDict functions the same as ObjDict except that
         it simply returns "None" for any key value that is not
         present instead of raising an exception
     """
@@ -33,14 +34,14 @@ class objdict(dict):
             raise AttributeError("No such attribute: " + name)
 
     def debugprint(self, label):
-        print(xustr(label) + "debug print for objdict:\n")
+        print(xustr(label) + "debug print for ObjDict:\n")
         print(self)
         print("\n")
 
 
-class objdefaultdict(objdict):
+class ObjDefaultDict(ObjDict):
     def __getattr__(self, name):
         try:
-            return objdict.__getattr__(self, name)
+            return ObjDict.__getattr__(self, name)
         except AttributeError:
             return None

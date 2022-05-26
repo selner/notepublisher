@@ -2,6 +2,5 @@
 # -*- coding: utf-8 -*-
 
 
-def reRaiseException(prefixmsg="", exception=None):
+def reraise_exception(prefixmsg="", exception=None):
     raise Exception(f'{prefixmsg} {exception}')
-

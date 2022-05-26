@@ -1,17 +1,15 @@
 # NotePublisher
 ```
 Usage:
-  notepublisher.py [-c FILE] [-o DIR] [--matchstack=STRING] [--matchnotebook=STRING] [--formats=PATTERNS]
-  notepublisher.py --version
+  cli <configfile> <output_path>> [--stack=STRING] [--notebook=STRING] [--formats=PATTERNS]
+  cli --version
 
 Options:
   -h --help  show this help message and exit
   --version  show version and exit
   -v --verbose  print status messages
-  -o DIR --output=DIR  output directory [default: ./]
-  -c FILE --config=FILE  config settings directory [default: ./notepublisher.cfg]
-  --matchstack=STRING  string to match stack names against when searching
-  --matchnotebook=STRING  string to match notebook names against when searching
+  --stack=STRING  string to match stack names against when searching
+  --notebook=STRING  string to match notebook names against when searching
   --formats=PATTERNS   export notes to file formats which match these comma
                        separated patterns [default: html,enex]
 
@@ -27,8 +25,5 @@ To use, you'll need production API keys from Evernote.  Enter your keys into a J
    "dev_auth_token": "zzzzzzzzzzzzzzzzzzzzzzzzyyyyyyyyyyyyyyyyyyyyyyyyyyzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
 }
 ```
-and then specify it on the command line as 
-```
-notepublisher.py <my options> -c myconfig.cfg
-```
+
 

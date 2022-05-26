@@ -2,17 +2,17 @@
 # -*- coding: utf-8 -*-
 
 import os
-import codecs
 import datetime
-from helpers.strings import xustr
+from notepublisher.helpers.strings import xustr
 
-def getDatetimeForFileName(fmt):
+
+def get_now_datestamp(fmt):
     now = datetime.datetime.now()
     ret = now.strftime(fmt)
     return ret
 
 
-def setupOutputFolder(folderpath):
+def setup_output_dir(folderpath):
     """ Creates the necessary folders in the path specified,
         including the actual folder we care about and any parents
         it needs.   Also handles expanding user paths ("~") and
@@ -35,7 +35,7 @@ def setupOutputFolder(folderpath):
     return outputfolder
 
 
-def getOutFileName(prefix=None, basename=None, suffix=None, ext=None, fIncludeDate=False):
+def generate_output_name(prefix=None, basename=None, suffix=None, ext=None, include_data=False):
     if not ext:
         raise ValueError("Required file extension paramater was not set.")
 
@@ -50,26 +50,24 @@ def getOutFileName(prefix=None, basename=None, suffix=None, ext=None, fIncludeDa
         prefix = ""
 
     ret = prefix
-    if fIncludeDate:
-        ret += getDatetimeForFileName("%m-%d-%Y") + "_"
+    if include_data:
+        ret += get_now_datestamp("%m-%d-%Y") + "_"
 
     ret += xustr(basename) + suffix + "." + ext
 
     return ret
 
 
-def save_text_file(path=None, basename=None, ext="txt", textdata=None, encoding='utf-8'):
+def save_text_file(path=None, basename=None, ext="txt", textdata=None):
     """
         Writes a file to disk with the text passed.  If filepath is not specified, the filename will
         be <testname>_results.txt.
     :return: the path of the file
     """
+    filepath = path
     try:
-        file = getOutFileName(basename=basename, ext=ext)
-        try:
-            os.mkdir(path)
-        except:
-            pass
+        file = generate_output_name(basename=basename, ext=ext)
+        os.makedirs(path, exist_ok=True)
 
         filepath = os.path.join(path, file)
         with open(filepath, mode="w") as f:
@@ -78,15 +76,15 @@ def save_text_file(path=None, basename=None, ext="txt", textdata=None, encoding=
         return filepath
 
     except Exception as e:
-        import helpers
-        helpers.reRaiseException(f'!!!!!! ERROR:  Failed to export file "{filepath}" due to error: {e}')
+        from notepublisher import helpers
+        helpers.reraise_exception(f'!!!!!! ERROR:  Failed to export file "{filepath}" due to error: {e}')
 
 
-def export_html_file(path=None, basename=None, html=None, encoding='utf-8'):
+def export_html_file(path=None, basename=None, html=None):
     """
         Writes a file to disk with the HTML version of the test
         result report.  If filepath is not specified, the filename will
         be <testname>_results.html.
     :return: the path of the HTML file
     """
-    return save_text_file(path=path, basename=basename, ext="html", textdata=html, encoding=encoding)
+    return save_text_file(path=path, basename=basename, ext="html", textdata=html)

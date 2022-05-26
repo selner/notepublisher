@@ -1,7 +1,7 @@
 #!/bin/python
 # -*- coding: utf-8 -*-
-import evernote.edam.error.ttypes as EvernoteTypes
-import evernote.edam.userstore.constants as UserStoreConstants
+import evernote.edam.error.ttypes as evernote_types
+import evernote.edam.userstore.constants as userstore_constants
 from evernote.api.client import EvernoteClient
 import platform
 import os
@@ -14,6 +14,9 @@ import sys
 #
 import requests
 from cachecontrol import CacheControl
+import logging
+import httplib2
+
 sess = requests.session()
 cached_sess = CacheControl(sess)
 #######
@@ -22,8 +25,7 @@ cached_sess = CacheControl(sess)
 #
 # Debug logging of requests
 #
-import logging
-import httplib2
+
 httplib2.debuglevel = 4
 
 logging.basicConfig()
@@ -41,16 +43,17 @@ if not os.path.exists(APP_STATE_DIR):
     os.makedirs(APP_STATE_DIR)
 TOKEN_FILEPATH = os.path.join(APP_STATE_DIR, BASE_EXEC_FILENAME + ".t")
 
-def getProductionOauthToken(key, secret):
+
+def get_production_oauth_token(key, secret):
     client = EvernoteClient(
         consumer_key=key,
         consumer_secret=secret,
         sandbox=False
     )
-    baseURI = "https://www.evernote.com"
+    base_uri = "https://www.evernote.com"
     request_token = client.get_request_token("http://localhost")
 
-#    request_token = client.get_request_token(baseURI + '/oauth')
+    #    request_token = client.get_request_token(base_uri + '/oauth')
     authorization_url = client.get_authorize_url(request_token)
     #  => https://sandbox.evernote.com/OAuth.action?oauth_token=OAUTH_TOKEN
     # To obtain the access token
@@ -70,13 +73,13 @@ def getProductionOauthToken(key, secret):
     return access_token
 
 
-
-def getLastOAuthToken():
+def get_last_oauth_token():
     oauth_token = None
     if os.path.exists(TOKEN_FILEPATH):
         with open(TOKEN_FILEPATH, 'r') as token_file:
             oauth_token = token_file.read()
     return oauth_token
+
 
 class EvernoteSession(object):
     _client = None
@@ -141,28 +144,27 @@ class EvernoteSession(object):
             self._tags = dict([(t.guid, t) for t in self.note_store.listTags()])
         return self._tags
 
-
     def connect(self, **kwargs):
         self._args = kwargs
 
         try:
             print(f'Getting client instance for Evernote...\n\tParameters = {kwargs}')
-            oauth_token = getLastOAuthToken()
+            oauth_token = get_last_oauth_token()
             if oauth_token:
                 try:
                     self._client = EvernoteClient(token=oauth_token, sandbox=False)
-                except:
+                except Exception as e:
                     self._client = None
 
             if self._client is None:
 
                 if "consumer_key" in kwargs and "consumer_secret" in kwargs:
-                    oauth_token = getProductionOauthToken(key=kwargs["consumer_key"],
-                                                          secret=kwargs["consumer_secret"])
+                    oauth_token = get_production_oauth_token(key=kwargs["consumer_key"],
+                                                             secret=kwargs["consumer_secret"])
                 elif "dev_auth_token" in kwargs:
                     if kwargs["dev_auth_token"] == "your developer token":
                         print("Please fill in your developer token")
-                        print("To get a developer token, visit " \
+                        print("To get a developer token, visit "
                               "https://sandbox.evernote.com/api/DeveloperToken.action")
                         exit(1)
 
@@ -176,7 +178,7 @@ class EvernoteSession(object):
                 #     clientKeys = json.load(fp=f)
                 #
                 #     if "consumer_key" in clientKeys and "consumer_secret" in clientKeys:
-                #         oauth_token = getProductionOauthToken(key=clientKeys["consumer_key"], secret=clientKeys["consumer_secret"])
+                #         oauth_token = get_production_oauth_token(key=clientKeys["consumer_key"], secret=clientKeys["consumer_secret"])
                 #     elif "dev_auth_token" in clientKeys:
                 #         if clientKeys["dev_auth_token"] == "your developer token":
                 #             print "Please fill in your developer token"
@@ -194,54 +196,54 @@ class EvernoteSession(object):
 
             platdetails = platform.platform(aliased=True, terse=False)
             plateuname = platform.uname()
-            print ("NotePublisher is running on %s." % platdetails)
+            print("NotePublisher is running on %s." % platdetails)
             version_ok = self.user_store.checkVersion(
                 "NotePublisher " + platdetails,
-                UserStoreConstants.EDAM_VERSION_MAJOR,
-                UserStoreConstants.EDAM_VERSION_MINOR
+                userstore_constants.EDAM_VERSION_MAJOR,
+                userstore_constants.EDAM_VERSION_MINOR
             )
-            print ("Is the Evernote API version up to date? ", version_ok)
-            print ("")
+            print("Is the Evernote API version up to date? ", version_ok)
+            print("")
             if not version_ok:
                 exit(1)
 
             return self._client
 
-        except EvernoteTypes.EDAMSystemException as e:
-            if e.errorCode == EvernoteTypes.EDAMErrorCode.RATE_LIMIT_REACHED:
-                print ("Rate limit reached.  Retrying the request in %d seconds." % e.rateLimitDuration)
+        except evernote_types.EDAMSystemException as e:
+            if e.errorCode == evernote_types.EDAMErrorCode.RATE_LIMIT_REACHED:
+                print("Rate limit reached.  Retrying the request in %d seconds." % e.rateLimitDuration)
                 import time
 
                 time.sleep(int(e.rateLimitDuration) + 1)
 
             else:
-                print ("!!!!! Error:  Failed to access note via Evernote API.  Message:  %s" % e)
+                print("!!!!! Error:  Failed to access note via Evernote API.  Message:  %s" % e)
                 exit(-1)
-        except EvernoteTypes.EDAMUserException as e:
-            print ("Invalid Evernote API request.  Please check the call parameters.  Message: %s" % e)
+        except evernote_types.EDAMUserException as e:
+            print("Invalid Evernote API request.  Please check the call parameters.  Message: %s" % e)
             exit(-1)
 
-def getEvernoteClient(**kwargs):
 
+def get_evernote_client(**kwargs):
     try:
         client = None
 
         print("Getting client instance for Evernote...\n\tParameters = " + kwargs)
-        oauth_token = getLastOAuthToken()
+        oauth_token = get_last_oauth_token()
         if oauth_token:
             try:
                 client = EvernoteClient(token=oauth_token, sandbox=False)
-            except:
+            except Exception as e:
                 client = None
 
         if client is None:
 
             if "consumer_key" in kwargs and "consumer_secret" in kwargs:
-                oauth_token = getProductionOauthToken(key=kwargs["consumer_key"], secret=kwargs["consumer_secret"])
+                oauth_token = get_production_oauth_token(key=kwargs["consumer_key"], secret=kwargs["consumer_secret"])
             elif "dev_auth_token" in kwargs:
                 if kwargs["dev_auth_token"] == "your developer token":
                     print("Please fill in your developer token")
-                    print("To get a developer token, visit " \
+                    print("To get a developer token, visit "
                           "https://sandbox.evernote.com/api/DeveloperToken.action")
                     exit(1)
 
@@ -255,7 +257,7 @@ def getEvernoteClient(**kwargs):
             #     clientKeys = json.load(fp=f)
             #
             #     if "consumer_key" in clientKeys and "consumer_secret" in clientKeys:
-            #         oauth_token = getProductionOauthToken(key=clientKeys["consumer_key"], secret=clientKeys["consumer_secret"])
+            #         oauth_token = get_production_oauth_token(key=clientKeys["consumer_key"], secret=clientKeys["consumer_secret"])
             #     elif "dev_auth_token" in clientKeys:
             #         if clientKeys["dev_auth_token"] == "your developer token":
             #             print "Please fill in your developer token"
@@ -274,32 +276,33 @@ def getEvernoteClient(**kwargs):
         user_store = client.get_user_store()
         platdetails = platform.platform(aliased=True, terse=False)
         plateuname = platform.uname()
-        print ("NotePublisher is running on %s." % platdetails)
+        print("NotePublisher is running on %s." % platdetails)
         version_ok = user_store.checkVersion(
             "NotePublisher " + platdetails,
-            UserStoreConstants.EDAM_VERSION_MAJOR,
-            UserStoreConstants.EDAM_VERSION_MINOR
+            userstore_constants.EDAM_VERSION_MAJOR,
+            userstore_constants.EDAM_VERSION_MINOR
         )
-        print ("Is the Evernote API version up to date? ", version_ok)
-        print ("")
+        print("Is the Evernote API version up to date? ", version_ok)
+        print("")
         if not version_ok:
             exit(1)
 
         return client
 
-    except EvernoteTypes.EDAMSystemException as e:
-        if e.errorCode == EvernoteTypes.EDAMErrorCode.RATE_LIMIT_REACHED:
-            print ("Rate limit reached.  Retrying the request in %d seconds." % e.rateLimitDuration)
+    except evernote_types.EDAMSystemException as e:
+        if e.errorCode == evernote_types.EDAMErrorCode.RATE_LIMIT_REACHED:
+            print("Rate limit reached.  Retrying the request in %d seconds." % e.rateLimitDuration)
             import time
 
             time.sleep(int(e.rateLimitDuration) + 1)
 
         else:
-            print ("!!!!! Error:  Failed to access note via Evernote API.  Message:  %s" % e)
+            print("!!!!! Error:  Failed to access note via Evernote API.  Message:  %s" % e)
             exit(-1)
-    except EvernoteTypes.EDAMUserException as e:
-        print ("Invalid Evernote API request.  Please check the call parameters.  Message: %s" % e)
+    except evernote_types.EDAMUserException as e:
+        print("Invalid Evernote API request.  Please check the call parameters.  Message: %s" % e)
         exit(-1)
+
 
 def parse_query_string(authorize_url):
     """ Simple function for extracting the OAuth parameters from an URL
@@ -312,5 +315,3 @@ def parse_query_string(authorize_url):
         key, value = pair.split('=', 1)
         vals[key] = value
     return vals
-
-

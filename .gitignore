@@ -1,4 +1,4 @@
-oauthkeys.json
+_private/oauthkeys.json
 
 .idea*
 
@@ -8,3 +8,5 @@ oauthkeys.json
 
 *.cfg
 .venv
+/_private/
+/venv.noindex/

@@ -6,6 +6,10 @@ lxml
 beautifulsoup4
 unidecode
 
+# for Markdown conversion
+slugify
+chevron
+
 # API calls
 requests
 cachecontrol
